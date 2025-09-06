@@ -1,8 +1,24 @@
 " ============================================================================
 " File:        todo_navigator.vim
-" Description: VIM plugin para navegar TODO/FIXME em arquivos Python
-" Maintainer:  Auto-generated
+" Description: VIM plugin to navigate TODO/FIXME/NOTE comments in codebase
+" Maintainer:  dferruzzo <https://github.com/dferruzzo>
 " License:     MIT
+" Version:     1.0.0
+" ============================================================================
+"
+" USAGE:
+"   :TodoNavigator  - Open TODO navigation window
+"   :TODOToggle     - Toggle TODO window on/off
+"
+" CONFIGURATION:
+"   let g:todo_navigator_keywords = ['TODO', 'FIXME', 'NOTE', 'HACK', 'BUG']
+"   let g:todo_navigator_file_extensions = ['*.py', '*.js', '*.vim']
+"   let g:todo_navigator_exclude_dirs = ['.git', '.venv', 'node_modules']
+"
+" MAPPINGS:
+"   In TODO buffer: <Enter> to jump to item, q to close
+"   Recommended: nmap <F5> :TODOToggle<CR>
+"
 " ============================================================================
 
 " Prevent loading twice
@@ -25,17 +41,20 @@ set cpo&vim
 " Global Variables
 " ============================================================================
 
-" Diretórios a excluir (pode ser customizado pelo usuário)
+" Diretórios a excluir da busca (pode ser customizado pelo usuário)
+" Default: ['.venv', 'venv', '__pycache__', '.git', 'node_modules']
 if !exists('g:todo_navigator_exclude_dirs')
     let g:todo_navigator_exclude_dirs = ['.venv', 'venv', '__pycache__', '.git', 'node_modules']
 endif
 
-" Extensões de arquivo a pesquisar (pode ser customizado pelo usuário)
+" Extensões de arquivo a pesquisar (pode ser customizado pelo usuário)  
+" Default: ['*.py', '*.js', '*.ts', '*.java', '*.c', '*.cpp', '*.h', '*.html', '*.css', '*.md']
 if !exists('g:todo_navigator_file_extensions')
     let g:todo_navigator_file_extensions = ['*.py', '*.js', '*.ts', '*.java', '*.c', '*.cpp', '*.h', '*.html', '*.css', '*.md']
 endif
 
 " Tags/palavras-chave a pesquisar (pode ser customizado pelo usuário)
+" Default: ['TODO', 'FIXME', 'NOTE', 'HACK', 'BUG', 'CANCELLED', 'XXX']
 if !exists('g:todo_navigator_keywords')
     let g:todo_navigator_keywords = ['TODO', 'FIXME', 'NOTE', 'HACK', 'BUG', 'CANCELLED', 'XXX']
 endif
@@ -44,7 +63,18 @@ endif
 " Main Functions
 " ============================================================================
 
-
+" Function: todo_navigator#ShowTodos()
+" Description: Searches for TODO-style comments and displays them in a navigation buffer
+" 
+" This function:
+" 1. Uses grep to recursively search for keywords in specified file types
+" 2. Excludes configured directories (like .git, node_modules, etc.)
+" 3. Creates a split window with results
+" 4. Applies syntax highlighting for different keyword types
+" 5. Sets up key mappings for navigation
+"
+" Returns: Nothing (void function)
+" Side effects: Opens a new split window with TODO results
 function! todo_navigator#ShowTodos()
     " Usar o diretório inicial salvo
     let base_dir = get(g:, 'todo_navigator_initial_cwd', getcwd())
@@ -172,6 +202,19 @@ function! todo_navigator#ShowTodos()
     "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
 endfunction
 
+" Function: todo_navigator#OpenTodoItem()
+" Description: Opens the file and jumps to the line of the selected TODO item
+"
+" This function:
+" 1. Parses the current line to extract filename and line number
+" 2. Validates the file exists and line format is correct
+" 3. Closes the TODO navigation window
+" 4. Opens the target file and jumps to the specific line
+" 5. Highlights the line temporarily for visual feedback
+"
+" Expected line format: "filename:line_number:    # KEYWORD comment"
+" Returns: Nothing (void function)
+" Side effects: Opens file, changes cursor position, closes TODO window
 function! todo_navigator#OpenTodoItem()
     let current_line = getline('.')
     
@@ -226,6 +269,16 @@ endfunction
 " Commands and Mappings
 " ============================================================================
 
+" Function: todo_navigator#TODOToggle()
+" Description: Toggles the TODO navigation window on/off
+"
+" This function:
+" 1. Searches for existing TODO buffer in all windows
+" 2. If found, closes all windows showing the TODO buffer
+" 3. If not found, opens a new TODO navigation window
+"
+" Returns: Nothing (void function)
+" Side effects: Opens or closes TODO navigation window
 function! todo_navigator#TODOToggle()
     let l:todo_bufnr = -1
     for bufnr in range(1, bufnr('$'))
@@ -251,9 +304,17 @@ function! todo_navigator#TODOToggle()
     endif
 endfunction
 
-" Comando principal
+" ============================================================================
+" Command Definitions
+" ============================================================================
+
+" Main command to open TODO navigation window
 command! TodoNavigator call todo_navigator#ShowTodos()
+
+" Alternative command name for the same functionality
 command! ShowTodos call todo_navigator#ShowTodos()
+
+" Toggle command to open/close TODO window
 command! TODOToggle call todo_navigator#TODOToggle()
 
 " ============================================================================
