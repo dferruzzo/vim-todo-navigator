@@ -190,13 +190,31 @@ endfunction
 " Commands and Mappings
 " ============================================================================
 
+function! todo_navigator#TODOToggle()
+    let l:todo_bufnr = -1
+    for bufnr in range(1, bufnr('$'))
+        if bufexists(bufnr) && bufname(bufnr) ==# 'TODO' && getbufvar(bufnr, '&buftype') ==# 'nofile'
+            let l:todo_bufnr = bufnr
+            break
+        endif
+    endfor
+    if l:todo_bufnr != -1
+        for winid in win_findbuf(l:todo_bufnr)
+            call nvim_win_close(winid, v:false)
+        endfor
+        return
+    else
+        call todo_navigator#ShowTodos()
+    endif
+endfunction
+
 " Comando principal
 command! TodoNavigator call todo_navigator#ShowTodos()
 command! ShowTodos call todo_navigator#ShowTodos()
+command! TODOToggle call todo_navigator#TODOToggle()
 
 " Mapeamento global para F5
-nnoremap <F5> :TodoNavigator<CR>
-
+nnoremap <F5> :TODOToggle<CR>
 " ============================================================================
 " Restore user settings
 " ============================================================================
