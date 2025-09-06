@@ -40,7 +40,7 @@ endif
 " ============================================================================
 
 
-function! todo-navigator#ShowTodos()
+function! Todo_navigator#ShowTodos()
     " Usar o diretório inicial salvo
     let base_dir = get(g:, 'todo_navigator_initial_cwd', getcwd())
 
@@ -126,7 +126,7 @@ function! todo-navigator#ShowTodos()
     setlocal laststatus=2
 
     " Mapear teclas
-    nnoremap <buffer> <CR> :call todo_navigator#OpenTodoItem()<CR>
+    nnoremap <buffer> <CR> :call Todo_navigator#OpenTodoItem()<CR>
     nnoremap <buffer> q :quit<CR>
     nnoremap <buffer> <Esc> :quit<CR>
 
@@ -141,7 +141,7 @@ function! todo-navigator#ShowTodos()
     "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
 endfunction
 
-function! todo-navigator#OpenTodoItem()
+function! Todo_navigator#OpenTodoItem()
     let current_line = getline('.')
     
     " Pular linhas de cabeçalho (primeiras 3 linhas)
@@ -185,8 +185,8 @@ function! todo-navigator#OpenTodoItem()
     normal! zz
     
     " Destacar a linha temporariamente
-    let match_id = matchadd('Search', '\%' . line('.') . 'l')
-    call timer_start(2000, {-> matchdelete(match_id)})
+    let l:match_id = matchadd('Search', '\%' . line('.') . 'l')
+    call timer_start(2000, {-> matchdelete(l:match_id)})
     
     "echo "Aberto: " . filename . " linha " . line_number
 endfunction
@@ -195,7 +195,7 @@ endfunction
 " Commands and Mappings
 " ============================================================================
 
-function! todo-navigator#TODOToggle()
+function! Todo_navigator#TODOToggle()
     let l:todo_bufnr = -1
     for bufnr in range(1, bufnr('$'))
         if bufexists(bufnr) && bufname(bufnr) ==# 'TODO' && getbufvar(bufnr, '&buftype') ==# 'nofile'
@@ -216,7 +216,7 @@ function! todo-navigator#TODOToggle()
         endwhile
         return
     else
-        call todo_navigator#ShowTodos()
+    call Todo_navigator#ShowTodos()
     endif
 endfunction
 
