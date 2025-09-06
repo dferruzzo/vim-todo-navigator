@@ -54,9 +54,7 @@ function! Todo_navigator#ShowTodos()
     let ext_pattern = "*.py"
     
     for ext in g:todo_navigator_file_extensions
-        let ext_pattern .= ' -name "' . ext . '" -o'
     endfor
-    let ext_pattern = substitute(ext_pattern, ' -o$', '', '')
 
     " Comando completo para encontrar TODOs/FIXMEs
     let find_cmd = 'find ' . shellescape(base_dir) . ' -type d' . exclude_pattern . ' -type f -name "*.py" -exec grep -HnE "TODO|FIXME" {} +'
@@ -104,11 +102,10 @@ function! Todo_navigator#ShowTodos()
     syntax clear
     syntax match TodoHeader /^=== TODO.*$/
     syntax match TodoSubHeader /^Press.*$/
-    syntax match TodoFile /^[^:]*:/
     syntax match TodoLineNum /:\d\+:/
-    syntax match TodoTag /TODO/
-    syntax match FixmeTag /FIXME/
-
+    command! TodoNavigator call Todo_navigator#ShowTodos()
+    command! ShowTodos call Todo_navigator#ShowTodos()
+    command! TODOToggle call Todo_navigator#TODOToggle()
     " Configurar cores
     highlight TodoHeader ctermfg=yellow cterm=bold guifg=yellow gui=bold
     highlight TodoSubHeader ctermfg=gray guifg=gray
