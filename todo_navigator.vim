@@ -130,8 +130,13 @@ function! todo_navigator#ShowTodos()
     nnoremap <buffer> q :quit<CR>
     nnoremap <buffer> <Esc> :quit<CR>
 
-    " Posicionar cursor na primeira entrada
-    normal! 4G
+
+    " Posicionar cursor na primeira entrada real (após o cabeçalho)
+    if len(lines) > 0
+        call cursor(5, 1)
+    else
+        call cursor(4, 1)
+    endif
 
     "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
 endfunction
@@ -220,8 +225,6 @@ command! TodoNavigator call todo_navigator#ShowTodos()
 command! ShowTodos call todo_navigator#ShowTodos()
 command! TODOToggle call todo_navigator#TODOToggle()
 
-" Mapeamento global para F5
-nnoremap <F5> :TODOToggle<CR>
 " ============================================================================
 " Restore user settings
 " ============================================================================
