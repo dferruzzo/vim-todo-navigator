@@ -199,9 +199,16 @@ function! todo_navigator#TODOToggle()
         endif
     endfor
     if l:todo_bufnr != -1
-        for winid in win_findbuf(l:todo_bufnr)
-            call nvim_win_close(winid, v:false)
-        endfor
+        " Find and close all windows showing the TODO buffer (Vim-compatible)
+        let winnr = 1
+        while winnr <= winnr('$')
+            if winbufnr(winnr) == l:todo_bufnr
+                execute winnr . 'wincmd c'
+                " After closing, don't increment winnr, as windows shift
+            else
+                let winnr += 1
+            endif
+        endwhile
         return
     else
         call todo_navigator#ShowTodos()
