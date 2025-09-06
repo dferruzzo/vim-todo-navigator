@@ -40,7 +40,7 @@ endif
 " ============================================================================
 
 
-function! todo_navigator#ShowTodos()
+function! todo-navigator#ShowTodos()
     " Usar o diretório inicial salvo
     let base_dir = get(g:, 'todo_navigator_initial_cwd', getcwd())
 
@@ -141,7 +141,7 @@ function! todo_navigator#ShowTodos()
     "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
 endfunction
 
-function! todo_navigator#OpenTodoItem()
+function! todo-navigator#OpenTodoItem()
     let current_line = getline('.')
     
     " Pular linhas de cabeçalho (primeiras 3 linhas)
@@ -195,7 +195,7 @@ endfunction
 " Commands and Mappings
 " ============================================================================
 
-function! todo_navigator#TODOToggle()
+function! todo-navigator#TODOToggle()
     let l:todo_bufnr = -1
     for bufnr in range(1, bufnr('$'))
         if bufexists(bufnr) && bufname(bufnr) ==# 'TODO' && getbufvar(bufnr, '&buftype') ==# 'nofile'
@@ -221,9 +221,9 @@ function! todo_navigator#TODOToggle()
 endfunction
 
 " Comando principal
-command! TodoNavigator call todo_navigator#ShowTodos()
-command! ShowTodos call todo_navigator#ShowTodos()
-command! TODOToggle call todo_navigator#TODOToggle()
+command! TodoNavigator call todo-navigator#ShowTodos()
+command! ShowTodos call todo-navigator#ShowTodos()
+command! TODOToggle call todo-navigator#TODOToggle()
 
 " ============================================================================
 " Restore user settings
