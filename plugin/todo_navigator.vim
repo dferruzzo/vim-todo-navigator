@@ -35,6 +35,11 @@ if !exists('g:todo_navigator_file_extensions')
     let g:todo_navigator_file_extensions = ['*.py', '*.js', '*.ts', '*.java', '*.c', '*.cpp', '*.h', '*.html', '*.css', '*.md']
 endif
 
+" Tags/palavras-chave a pesquisar (pode ser customizado pelo usuário)
+if !exists('g:todo_navigator_keywords')
+    let g:todo_navigator_keywords = ['TODO', 'FIXME', 'NOTE', 'HACK', 'BUG', 'CANCELLED', 'XXX']
+endif
+
 " ============================================================================
 " Main Functions
 " ============================================================================
@@ -62,9 +67,11 @@ function! todo_navigator#ShowTodos()
         let exclude_grep_pattern .= '--exclude-dir="' . dir . '" '
     endfor
 
-    " Comando completo para encontrar TODOs/FIXMEs
-    " Use the simplest possible approach
-    let find_cmd = 'grep -r ' . exclude_grep_pattern . include_pattern . '-n "TODO\|FIXME" ' . shellescape(base_dir) . ' 2>/dev/null'
+    " Construir padrão de palavras-chave para buscar
+    let keywords_pattern = join(g:todo_navigator_keywords, '\|')
+
+    " Comando completo para encontrar TODOs/FIXMEs/etc
+    let find_cmd = 'grep -r ' . exclude_grep_pattern . include_pattern . '-n "' . keywords_pattern . '" ' . shellescape(base_dir) . ' 2>/dev/null'
 
     " Executar comando e capturar saída
     let todo_list = system(find_cmd)
@@ -99,34 +106,47 @@ function! todo_navigator#ShowTodos()
 
 
     " Adicionar cabeçalho e mostrar diretório base
-    call append(0, '=== TODO/FIXME Navigator ===')
+    call append(0, '=== TODO Navigator ===')
     call append(1, 'Base directory: ' . base_dir)
-    call append(2, 'Press <Enter> to open file, <q> to close')
-    call append(3, '')
+    call append(2, 'Keywords: ' . join(g:todo_navigator_keywords, ', '))
+    call append(3, 'Press <Enter> to open file, <q> to close')
+    call append(4, '')
 
     " Dividir a saída em linhas e adicionar ao buffer
     let lines = split(rel_todo_list, '\n')
-    call append(4, lines)
+    call append(5, lines)
 
     " Ir para o início
     normal! gg
 
     " Configurar syntax highlighting
     syntax clear
-    syntax match TodoHeader /^=== TODO.*$/
+    syntax match TodoHeader /^=== TODO Navigator ===$/
+    syntax match TodoSubHeader /^Base directory:.*$/
+    syntax match TodoSubHeader /^Keywords:.*$/
     syntax match TodoSubHeader /^Press.*$/
     syntax match TodoFile /^[^:]*:/
     syntax match TodoLineNum /:\d\+:/
-    syntax match TodoTag /TODO/
-    syntax match FixmeTag /FIXME/
+    
+    " Criar syntax highlighting dinâmico para todas as palavras-chave
+    for keyword in g:todo_navigator_keywords
+        execute 'syntax match TodoKeyword_' . keyword . ' /' . keyword . '/'
+    endfor
 
     " Configurar cores
     highlight TodoHeader ctermfg=yellow cterm=bold guifg=yellow gui=bold
     highlight TodoSubHeader ctermfg=gray guifg=gray
     highlight TodoFile ctermfg=blue cterm=bold guifg=blue gui=bold
     highlight TodoLineNum ctermfg=magenta guifg=magenta
-    highlight TodoTag ctermfg=green cterm=bold guifg=green gui=bold
-    highlight FixmeTag ctermfg=red cterm=bold guifg=red gui=bold
+    
+    " Cores específicas para diferentes tipos de tags
+    highlight TodoKeyword_TODO ctermfg=green cterm=bold guifg=green gui=bold
+    highlight TodoKeyword_FIXME ctermfg=red cterm=bold guifg=red gui=bold
+    highlight TodoKeyword_NOTE ctermfg=cyan cterm=bold guifg=cyan gui=bold
+    highlight TodoKeyword_HACK ctermfg=yellow cterm=bold guifg=orange gui=bold
+    highlight TodoKeyword_BUG ctermfg=red cterm=bold guifg=red gui=bold
+    highlight TodoKeyword_CANCELLED ctermfg=gray cterm=strikethrough guifg=gray gui=strikethrough
+    highlight TodoKeyword_XXX ctermfg=red cterm=bold guifg=red gui=bold
 
     " Tornar buffer somente leitura DEPOIS de adicionar conteúdo
     setlocal readonly
@@ -144,9 +164,9 @@ function! todo_navigator#ShowTodos()
 
     " Posicionar cursor na primeira entrada real (após o cabeçalho)
     if len(lines) > 0
-        call cursor(5, 1)
+        call cursor(6, 1)
     else
-        call cursor(4, 1)
+        call cursor(5, 1)
     endif
 
     "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
@@ -155,14 +175,14 @@ endfunction
 function! todo_navigator#OpenTodoItem()
     let current_line = getline('.')
     
-    " Pular linhas de cabeçalho (primeiras 3 linhas)
-    if line('.') <= 3
-        echo "Posicione o cursor em uma linha de TODO/FIXME"
+    " Pular linhas de cabeçalho (primeiras 4 linhas)
+    if line('.') <= 4
+        echo "Posicione o cursor em uma linha de TODO/FIXME/etc"
         return
     endif
     
     " Extrair arquivo e número da linha usando regex
-    " Formato esperado: ./arquivo.py:123:    # TODO/FIXME comentário
+    " Formato esperado: ./arquivo.py:123:    # TODO/FIXME/etc comentário
     let matches = matchlist(current_line, '\v^([^:]+):(\d+):')
     
     if len(matches) < 3
