@@ -9,7 +9,13 @@
 if exists('g:loaded_todo_navigator') || &cp
     finish
 endif
+
 let g:loaded_todo_navigator = 1
+
+" Salvar o diretório inicial onde o Vim foi aberto
+if !exists('g:todo_navigator_initial_cwd')
+    let g:todo_navigator_initial_cwd = getcwd()
+endif
 
 " Save user settings
 let s:save_cpo = &cpo
@@ -33,57 +39,67 @@ endif
 " Main Functions
 " ============================================================================
 
+
 function! todo_navigator#ShowTodos()
+    " Usar o diretório inicial salvo
+    let base_dir = get(g:, 'todo_navigator_initial_cwd', getcwd())
+
     " Construir comando find
     let exclude_pattern = ''
     for dir in g:todo_navigator_exclude_dirs
         let exclude_pattern .= ' -name "' . dir . '" -prune -o'
     endfor
-    
+
     " Construir padrão de extensões
-    let ext_pattern = ''
+    let ext_pattern = "*.py"
+    
     for ext in g:todo_navigator_file_extensions
         let ext_pattern .= ' -name "' . ext . '" -o'
     endfor
     let ext_pattern = substitute(ext_pattern, ' -o$', '', '')
-    
+
     " Comando completo para encontrar TODOs/FIXMEs
-    let find_cmd = 'find . -type d' . exclude_pattern . ' -type f \(' . ext_pattern . '\) -exec grep -HnE "TODO|FIXME" {} +'
-    
+    let find_cmd = 'find ' . shellescape(base_dir) . ' -type d' . exclude_pattern . ' -type f -name "*.py" -exec grep -HnE "TODO|FIXME" {} +'
+
     " Executar comando e capturar saída
     let todo_list = system(find_cmd)
-    
+
+    " Remover o caminho base do início das linhas para exibir relativo
+    let rel_todo_list = substitute(todo_list, '\V' . base_dir . '/', '', 'g')
+
     " Verificar se encontrou algo
-    if v:shell_error != 0 || empty(trim(todo_list))
-        echo "Nenhum TODO/FIXME encontrado."
+    if v:shell_error != 0 || empty(trim(rel_todo_list))
+        echo "Nenhum TODO/FIXME encontrado." 
         return
     endif
-    
+
     " Criar split horizontal e novo buffer
     split
     enew
-    
+
     " Configurar buffer como temporal
     setlocal buftype=nofile
     setlocal bufhidden=wipe
     setlocal nobuflisted
     setlocal noswapfile
-    
+
     " Definir nome do buffer
     file TODO
-    
-    " Adicionar cabeçalho
+
+
+    " Adicionar cabeçalho e mostrar diretório base
     call append(0, '=== TODO/FIXME Navigator ===')
-    call append(1, 'Press <Enter> to open file, <q> to close')
-    call append(2, '')
-    
+    call append(1, 'Base directory: ' . base_dir)
+    call append(2, 'Press <Enter> to open file, <q> to close')
+    call append(3, '')
+
     " Dividir a saída em linhas e adicionar ao buffer
-    let lines = split(todo_list, '\n')
-    call append(3, lines)
-    
+    let lines = split(rel_todo_list, '\n')
+    call append(4, lines)
+
     " Ir para o início
     normal! gg
-    
+
     " Configurar syntax highlighting
     syntax clear
     syntax match TodoHeader /^=== TODO.*$/
@@ -92,7 +108,7 @@ function! todo_navigator#ShowTodos()
     syntax match TodoLineNum /:\d\+:/
     syntax match TodoTag /TODO/
     syntax match FixmeTag /FIXME/
-    
+
     " Configurar cores
     highlight TodoHeader ctermfg=yellow cterm=bold guifg=yellow gui=bold
     highlight TodoSubHeader ctermfg=gray guifg=gray
@@ -100,24 +116,24 @@ function! todo_navigator#ShowTodos()
     highlight TodoLineNum ctermfg=magenta guifg=magenta
     highlight TodoTag ctermfg=green cterm=bold guifg=green gui=bold
     highlight FixmeTag ctermfg=red cterm=bold guifg=red gui=bold
-    
+
     " Tornar buffer somente leitura
     setlocal readonly
     setlocal nomodifiable
-    
+
     " Configurar status line para mostrar linha atual
     setlocal statusline=%f\ [%l/%L]\ %p%%
     setlocal laststatus=2
-    
+
     " Mapear teclas
     nnoremap <buffer> <CR> :call todo_navigator#OpenTodoItem()<CR>
     nnoremap <buffer> q :quit<CR>
     nnoremap <buffer> <Esc> :quit<CR>
-    
+
     " Posicionar cursor na primeira entrada
     normal! 4G
-    
-    echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
+
+    "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
 endfunction
 
 function! todo_navigator#OpenTodoItem()
@@ -167,7 +183,7 @@ function! todo_navigator#OpenTodoItem()
     let match_id = matchadd('Search', '\%' . line('.') . 'l')
     call timer_start(2000, {-> matchdelete(match_id)})
     
-    echo "Aberto: " . filename . " linha " . line_number
+    "echo "Aberto: " . filename . " linha " . line_number
 endfunction
 
 " ============================================================================
