@@ -40,7 +40,7 @@ endif
 " ============================================================================
 
 
-function! Todo_navigator#ShowTodos()
+function! todo_navigator#ShowTodos()
     " Usar o diretório inicial salvo
     let base_dir = get(g:, 'todo_navigator_initial_cwd', getcwd())
 
@@ -103,9 +103,9 @@ function! Todo_navigator#ShowTodos()
     syntax match TodoHeader /^=== TODO.*$/
     syntax match TodoSubHeader /^Press.*$/
     syntax match TodoLineNum /:\d\+:/
-    command! TodoNavigator call Todo_navigator#ShowTodos()
-    command! ShowTodos call Todo_navigator#ShowTodos()
-    command! TODOToggle call Todo_navigator#TODOToggle()
+    command! TodoNavigator call todo_navigator#ShowTodos()
+    command! ShowTodos call todo_navigator#ShowTodos()
+    command! TODOToggle call todo_navigator#TODOToggle()
     " Configurar cores
     highlight TodoHeader ctermfg=yellow cterm=bold guifg=yellow gui=bold
     highlight TodoSubHeader ctermfg=gray guifg=gray
@@ -123,7 +123,7 @@ function! Todo_navigator#ShowTodos()
     setlocal laststatus=2
 
     " Mapear teclas
-    nnoremap <buffer> <CR> :call Todo_navigator#OpenTodoItem()<CR>
+    nnoremap <buffer> <CR> :call todo_navigator#OpenTodoItem()<CR>
     nnoremap <buffer> q :quit<CR>
     nnoremap <buffer> <Esc> :quit<CR>
 
@@ -138,7 +138,7 @@ function! Todo_navigator#ShowTodos()
     "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
 endfunction
 
-function! Todo_navigator#OpenTodoItem()
+function! todo_navigator#OpenTodoItem()
     let current_line = getline('.')
     
     " Pular linhas de cabeçalho (primeiras 3 linhas)
@@ -192,7 +192,7 @@ endfunction
 " Commands and Mappings
 " ============================================================================
 
-function! Todo_navigator#TODOToggle()
+function! todo_navigator#TODOToggle()
     let l:todo_bufnr = -1
     for bufnr in range(1, bufnr('$'))
         if bufexists(bufnr) && bufname(bufnr) ==# 'TODO' && getbufvar(bufnr, '&buftype') ==# 'nofile'
@@ -213,14 +213,14 @@ function! Todo_navigator#TODOToggle()
         endwhile
         return
     else
-    call Todo_navigator#ShowTodos()
+    call todo_navigator#ShowTodos()
     endif
 endfunction
 
 " Comando principal
-command! TodoNavigator call todo-navigator#ShowTodos()
-command! ShowTodos call todo-navigator#ShowTodos()
-command! TODOToggle call todo-navigator#TODOToggle()
+command! TodoNavigator call todo_navigator#ShowTodos()
+command! ShowTodos call todo_navigator#ShowTodos()
+command! TODOToggle call todo_navigator#TODOToggle()
 
 " ============================================================================
 " Restore user settings
