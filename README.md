@@ -13,7 +13,7 @@ A simple plugin to help you manage and navigate TODO comments in your code using
 Use your preferred plugin manager. For example, with [vim-plug](https://github.com/junegunn/vim-plug):
 
 ```vim
-Plug 'dferruzzo/vim_todo_navigator'
+Plug 'dferruzzo/vim-todo-navigator'
 ```
 
 Then run:
@@ -26,7 +26,14 @@ Then run:
 
 - Run `:TodoNavigator` to open the list of TODOs.
 - Run `:TODOToggle` to toggle the buffer ON/OFF
+
+## Mapping
+
 - Use the provided mappings to jump between comments.
+
+```
+nmap <F5> :TODOToggle<CR>
+```
 
 ## TODO: Configuration
 
