@@ -32,7 +32,7 @@ endif
 
 " Extensões de arquivo a pesquisar (pode ser customizado pelo usuário)
 if !exists('g:todo_navigator_file_extensions')
-    let g:todo_navigator_file_extensions = ['*.py']
+    let g:todo_navigator_file_extensions = ['*.py', '*.js', '*.ts', '*.java', '*.c', '*.cpp', '*.h', '*.html', '*.css', '*.md']
 endif
 
 " ============================================================================
@@ -47,20 +47,33 @@ function! todo_navigator#ShowTodos()
     " Construir comando find
     let exclude_pattern = ''
     for dir in g:todo_navigator_exclude_dirs
-        let exclude_pattern .= ' -name "' . dir . '" -prune -o'
+        let exclude_pattern .= ' \\( -name "' . dir . '" -prune \\) -o'
     endfor
 
-    " Construir padrão de extensões
-    let ext_pattern = "*.py"
-    
+    " Construir padrão de extensões para grep
+    let include_pattern = ''
     for ext in g:todo_navigator_file_extensions
+        let include_pattern .= '--include="' . ext . '" '
+    endfor
+
+    " Construir padrão de exclusões para grep
+    let exclude_grep_pattern = ''
+    for dir in g:todo_navigator_exclude_dirs
+        let exclude_grep_pattern .= '--exclude-dir="' . dir . '" '
     endfor
 
     " Comando completo para encontrar TODOs/FIXMEs
-    let find_cmd = 'find ' . shellescape(base_dir) . ' -type d' . exclude_pattern . ' -type f -name "*.py" -exec grep -HnE "TODO|FIXME" {} +'
+    " Use the simplest possible approach
+    let find_cmd = 'grep -r ' . exclude_grep_pattern . include_pattern . '-n "TODO\|FIXME" ' . shellescape(base_dir) . ' 2>/dev/null'
 
     " Executar comando e capturar saída
     let todo_list = system(find_cmd)
+
+    " Verificar se houve erro no comando find/grep
+    if v:shell_error != 0 && v:shell_error != 1
+        echo "Erro ao executar comando find: " . v:shell_error
+        return
+    endif
 
     " Remover o caminho base do início das linhas para exibir relativo
     let rel_todo_list = substitute(todo_list, '\V' . base_dir . '/', '', 'g')
@@ -102,10 +115,11 @@ function! todo_navigator#ShowTodos()
     syntax clear
     syntax match TodoHeader /^=== TODO.*$/
     syntax match TodoSubHeader /^Press.*$/
+    syntax match TodoFile /^[^:]*:/
     syntax match TodoLineNum /:\d\+:/
-    command! TodoNavigator call todo_navigator#ShowTodos()
-    command! ShowTodos call todo_navigator#ShowTodos()
-    command! TODOToggle call todo_navigator#TODOToggle()
+    syntax match TodoTag /TODO/
+    syntax match FixmeTag /FIXME/
+
     " Configurar cores
     highlight TodoHeader ctermfg=yellow cterm=bold guifg=yellow gui=bold
     highlight TodoSubHeader ctermfg=gray guifg=gray
@@ -114,7 +128,7 @@ function! todo_navigator#ShowTodos()
     highlight TodoTag ctermfg=green cterm=bold guifg=green gui=bold
     highlight FixmeTag ctermfg=red cterm=bold guifg=red gui=bold
 
-    " Tornar buffer somente leitura
+    " Tornar buffer somente leitura DEPOIS de adicionar conteúdo
     setlocal readonly
     setlocal nomodifiable
 
