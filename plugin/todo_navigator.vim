@@ -3,21 +3,24 @@
 " Description: VIM plugin to navigate TODO/FIXME/NOTE comments in codebase
 " Maintainer:  dferruzzo <https://github.com/dferruzzo>
 " License:     MIT
-" Version:     1.0.0
+" Version:     1.1.0
 " ============================================================================
 "
 " USAGE:
 "   :TodoNavigator  - Open TODO navigation window
 "   :TODOToggle     - Toggle TODO window on/off
+"   :TodoHighlight  - Toggle keyword highlighting in current buffer
 "
 " CONFIGURATION:
 "   let g:todo_navigator_keywords = ['TODO', 'FIXME', 'NOTE', 'HACK', 'BUG']
 "   let g:todo_navigator_file_extensions = ['*.py', '*.js', '*.vim']
 "   let g:todo_navigator_exclude_dirs = ['.git', '.venv', 'node_modules']
+"   let g:todo_navigator_auto_highlight = 1  " Enable automatic highlighting (default: 1)
 "
 " MAPPINGS:
 "   In TODO buffer: <Enter> to jump to item, q to close
 "   Recommended: nmap <F5> :TODOToggle<CR>
+"   Recommended: nmap <F6> :TodoHighlight<CR>
 "
 " ============================================================================
 
@@ -57,6 +60,12 @@ endif
 " Default: ['TODO', 'FIXME', 'NOTE', 'HACK', 'BUG', 'CANCELLED', 'XXX']
 if !exists('g:todo_navigator_keywords')
     let g:todo_navigator_keywords = ['TODO', 'FIXME', 'NOTE', 'HACK', 'BUG', 'CANCELLED', 'XXX']
+endif
+
+" Enable automatic keyword highlighting in opened files
+" Default: 1 (enabled)
+if !exists('g:todo_navigator_auto_highlight')
+    let g:todo_navigator_auto_highlight = 1
 endif
 
 " ============================================================================
@@ -202,6 +211,98 @@ function! todo_navigator#ShowTodos()
     "echo "TODO Navigator carregado. Use Enter para abrir, q para sair."
 endfunction
 
+" Function: todo_navigator#HighlightKeywords()
+" Description: Highlights TODO keywords in the current buffer
+"
+" This function:
+" 1. Clears any existing TODO keyword highlights
+" 2. Creates syntax matches for each configured keyword
+" 3. Applies color highlighting based on keyword type
+"
+" Returns: Nothing (void function)
+" Side effects: Adds syntax highlighting to current buffer
+function! todo_navigator#HighlightKeywords()
+    " Clear existing TODO highlights to avoid duplicates
+    call todo_navigator#ClearKeywordHighlights()
+    
+    " Create syntax matches for each keyword
+    for keyword in g:todo_navigator_keywords
+        " Match keyword followed by optional colon and text
+        " This will match: TODO, TODO:, TODO: some text, # TODO, // TODO, etc.
+        execute 'syntax match TodoKeyword_' . keyword . ' /\<' . keyword . '\>/'
+    endfor
+    
+    " Apply color highlighting for each keyword type
+    highlight TodoKeyword_TODO ctermfg=green cterm=bold guifg=#00ff00 gui=bold
+    highlight TodoKeyword_FIXME ctermfg=red cterm=bold guifg=#ff0000 gui=bold
+    highlight TodoKeyword_NOTE ctermfg=cyan cterm=bold guifg=#00ffff gui=bold
+    highlight TodoKeyword_HACK ctermfg=yellow cterm=bold guifg=#ffaa00 gui=bold
+    highlight TodoKeyword_BUG ctermfg=red cterm=bold guifg=#ff0000 gui=bold
+    highlight TodoKeyword_CANCELLED ctermfg=gray cterm=strikethrough guifg=#808080 gui=strikethrough
+    highlight TodoKeyword_XXX ctermfg=red cterm=bold guifg=#ff0000 gui=bold
+endfunction
+
+" Function: todo_navigator#ClearKeywordHighlights()
+" Description: Removes TODO keyword highlights from the current buffer
+"
+" Returns: Nothing (void function)
+" Side effects: Clears syntax highlighting for TODO keywords
+function! todo_navigator#ClearKeywordHighlights()
+    for keyword in g:todo_navigator_keywords
+        silent! execute 'syntax clear TodoKeyword_' . keyword
+    endfor
+endfunction
+
+" Function: todo_navigator#ToggleKeywordHighlight()
+" Description: Toggles keyword highlighting on/off for current buffer
+"
+" Returns: Nothing (void function)
+" Side effects: Enables or disables keyword highlighting
+function! todo_navigator#ToggleKeywordHighlight()
+    if !exists('b:todo_navigator_highlight_enabled')
+        let b:todo_navigator_highlight_enabled = 0
+    endif
+    
+    if b:todo_navigator_highlight_enabled
+        call todo_navigator#ClearKeywordHighlights()
+        let b:todo_navigator_highlight_enabled = 0
+        echo "TODO keyword highlighting disabled for this buffer"
+    else
+        call todo_navigator#HighlightKeywords()
+        let b:todo_navigator_highlight_enabled = 1
+        echo "TODO keyword highlighting enabled for this buffer"
+    endif
+endfunction
+
+" Function: todo_navigator#AutoHighlightKeywords()
+" Description: Automatically highlights keywords when a buffer is opened (if enabled)
+"
+" This is called by autocommands when entering a buffer.
+" It respects the g:todo_navigator_auto_highlight setting.
+"
+" Returns: Nothing (void function)
+" Side effects: May add syntax highlighting to buffer
+function! todo_navigator#AutoHighlightKeywords()
+    " Skip if auto-highlight is disabled globally
+    if !get(g:, 'todo_navigator_auto_highlight', 1)
+        return
+    endif
+    
+    " Skip for special buffers (like the TODO navigation buffer itself)
+    if &buftype != '' || bufname('%') ==# 'TODO'
+        return
+    endif
+    
+    " Skip if already highlighted
+    if exists('b:todo_navigator_highlight_enabled') && b:todo_navigator_highlight_enabled
+        return
+    endif
+    
+    " Apply highlighting
+    call todo_navigator#HighlightKeywords()
+    let b:todo_navigator_highlight_enabled = 1
+endfunction
+
 " Function: todo_navigator#OpenTodoItem()
 " Description: Opens the file and jumps to the line of the selected TODO item
 "
@@ -316,6 +417,28 @@ command! ShowTodos call todo_navigator#ShowTodos()
 
 " Toggle command to open/close TODO window
 command! TODOToggle call todo_navigator#TODOToggle()
+
+" Command to toggle keyword highlighting in current buffer
+command! TodoHighlight call todo_navigator#ToggleKeywordHighlight()
+
+" Command to enable keyword highlighting globally
+command! TodoHighlightEnable let g:todo_navigator_auto_highlight = 1 | call todo_navigator#HighlightKeywords() | let b:todo_navigator_highlight_enabled = 1 | echo "Auto-highlight enabled globally"
+
+" Command to disable keyword highlighting globally
+command! TodoHighlightDisable let g:todo_navigator_auto_highlight = 0 | call todo_navigator#ClearKeywordHighlights() | let b:todo_navigator_highlight_enabled = 0 | echo "Auto-highlight disabled globally"
+
+" ============================================================================
+" Auto Commands
+" ============================================================================
+
+" Automatically highlight keywords when entering a buffer
+augroup TodoNavigatorHighlight
+    autocmd!
+    " Apply highlighting when entering any buffer
+    autocmd BufEnter,BufWinEnter * call todo_navigator#AutoHighlightKeywords()
+    " Reapply highlighting when switching buffers or changing windows
+    autocmd WinEnter * call todo_navigator#AutoHighlightKeywords()
+augroup END
 
 " ============================================================================
 " Restore user settings

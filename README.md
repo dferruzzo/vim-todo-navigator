@@ -11,6 +11,8 @@ A Vim plugin that helps you quickly find and navigate TODO, FIXME, NOTE, and oth
 - 🎨 **Color-Coded Tags**: Different colors for different tag types with syntax highlighting
 - ⚡ **Quick Navigation**: Press Enter to jump directly to any tagged item
 - 🔄 **Toggle Interface**: Easy toggle between tag list and your code
+- ✨ **Auto-Highlighting**: Automatically highlights TODO keywords in all opened files
+- 🎯 **Per-Buffer Control**: Toggle highlighting on/off for individual files
 
 ## Installation
 
@@ -40,6 +42,9 @@ git clone https://github.com/dferruzzo/vim-todo-navigator.git ~/.vim/pack/plugin
 - `:TodoNavigator` - Opens the TODO navigation window
 - `:ShowTodos` - Alias for `:TodoNavigator`
 - `:TODOToggle` - Toggles the TODO window on/off
+- `:TodoHighlight` - Toggles keyword highlighting in current buffer
+- `:TodoHighlightEnable` - Enables auto-highlighting globally
+- `:TodoHighlightDisable` - Disables auto-highlighting globally
 
 ### Navigation
 
@@ -53,7 +58,11 @@ In the TODO window:
 Add this to your `.vimrc` for quick access:
 
 ```vim
+" Toggle TODO navigation window
 nmap <F5> :TODOToggle<CR>
+
+" Toggle keyword highlighting in current buffer
+nmap <F6> :TodoHighlight<CR>
 ```
 
 ## Configuration
@@ -81,6 +90,20 @@ Customize which directories to exclude (default: `['.venv', 'venv', '__pycache__
 ```vim
 let g:todo_navigator_exclude_dirs = ['.venv', 'venv', '__pycache__', '.git', 'node_modules', 'dist', 'build']
 ```
+
+### Auto-Highlighting
+
+By default, the plugin automatically highlights TODO keywords in all opened files. You can disable this:
+
+```vim
+" Disable automatic highlighting
+let g:todo_navigator_auto_highlight = 0
+```
+
+Or toggle it on-demand with:
+- `:TodoHighlight` - Toggle for current buffer
+- `:TodoHighlightEnable` - Enable globally
+- `:TodoHighlightDisable` - Disable globally
 
 ## Color Coding
 
